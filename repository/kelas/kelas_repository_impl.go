@@ -12,7 +12,7 @@ type KelasRepositoryImpl struct {
 	DB *sql.DB
 }
 
-func NewKelasRepository(db *sql.DB) KelasRepository {
+func NewKelasRepository(db *sql.DB) *KelasRepositoryImpl {
 	return &KelasRepositoryImpl{db}
 }
 func (repository *KelasRepositoryImpl) Insert(ctx context.Context, kelas entity.Kelas) (entity.Kelas, error) {
@@ -29,7 +29,7 @@ func (repository *KelasRepositoryImpl) Insert(ctx context.Context, kelas entity.
 	return kelas, nil
 }
 func (repository *KelasRepositoryImpl) FindById(ctx context.Context, id int32) (entity.Kelas, error) {
-	script := "SELECt id, merk, harga FROM handphone WHERE id = ? LIMIT 1"
+	script := "SELECt id, Jumlah_murid, Nama_sekolah FROM Kelas WHERE id = ? LIMIT 1"
 	rows, err := repository.DB.QueryContext(ctx, script, id)
 	Kelas := entity.Kelas{}
 	if err != nil {
@@ -62,46 +62,34 @@ func (repository *KelasRepositoryImpl) FindAll(ctx context.Context) ([]entity.Ke
 	return Kilas, nil
 }
 
-func (repository *KelasRepositoryImpl) Update(ctx context.Context, id int32, Kelas entity.Kelas) (entity.Kelas, error) {
-	//TODO implement me
-	script := "SELECT id, merk, harga FROM handphone WHERE id = ? LIMIT 1"
-	rows, err := repository.DB.QueryContext(ctx, script, id)
-	defer rows.Close()
+func (repository *KelasRepositoryImpl) Update(ctx context.Context, kelas entity.Kelas) (entity.Kelas, error) {
+	script := "UPDATE kelas SET kelas = ? WHERE  Nama_sekolah = ?"
+	result, err := repository.DB.ExecContext(ctx, script, kelas.Jumlah_murid, kelas.Nama_sekolah)
 	if err != nil {
-		return Kelas, err
+		return kelas, err
 	}
-	if rows.Next() {
-		// yes
-		script := "UPDATE Kelas SET jumlah_murid = ?, nama_sekolah = ? WHERE id = ?"
-		_, err := repository.DB.ExecContext(ctx, script, Kelas.Jumlah_murid, Kelas.Nama_sekolah, id)
-		if err != nil {
-			return Kelas, err
-		}
-		Kelas.Id = id
-		return Kelas, nil
-	} else {
-		// no
-		return Kelas, errors.New(("Id " + strconv.Itoa(int(id)) + " Not Found"))
+	rowCnt, err := result.RowsAffected()
+	if err != nil {
+		return kelas, err
 	}
+	if rowCnt == 0 {
+		return kelas, err
+	}
+	return kelas, nil
 }
 
-func (repository *KelasRepositoryImpl) Delete(ctx context.Context, id int32) (string, error) {
-	script := "SELECT id, merk, harga FROM handphone WHERE id = ? LIMIT 1"
-	rows, err := repository.DB.QueryContext(ctx, script, id)
-	defer rows.Close()
+func (repository *KelasRepositoryImpl) Delete(ctx context.Context, kelas entity.Kelas) (entity.Kelas, error) {
+	script := "DELETE FROM kelas WHERE Jumlah_murid = ?"
+	result, err := repository.DB.ExecContext(ctx, script, kelas.Jumlah_murid)
 	if err != nil {
-		return "Gagal", err
+		return kelas, err
 	}
-	if rows.Next() {
-
-		script := "DELETE FROM handphone WHERE id = ?"
-		_, err := repository.DB.ExecContext(ctx, script, id)
-		if err != nil {
-			return "Id" + strconv.Itoa(int(id)) + "Gagal", err
-		}
-		return "Id" + strconv.Itoa(int(id)) + "Sukses", nil
-	} else {
-
-		return "Gagal", errors.New(("Id" + strconv.Itoa(int(id)) + "tidak ada"))
+	rowCnt, err := result.RowsAffected()
+	if err != nil {
+		return kelas, err
 	}
+	if rowCnt == 0 {
+		return kelas, err
+	}
+	return kelas, nil
 }

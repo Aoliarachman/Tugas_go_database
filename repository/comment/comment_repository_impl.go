@@ -8,15 +8,15 @@ import (
 	"strconv"
 )
 
-type commentRepositoryImpl struct {
+type CommentRepositoryImpl struct {
 	DB *sql.DB
 }
 
-func NewCommentRepository(db *sql.DB) CommentRepository {
-	return &commentRepositoryImpl{db}
+func NewCommentRepository(db *sql.DB) *CommentRepositoryImpl {
+	return &CommentRepositoryImpl{db}
 }
 
-func (repository *commentRepositoryImpl) Insert(ctx context.Context, comment entity.Comment) (entity.Comment, error) {
+func (repository *CommentRepositoryImpl) Insert(ctx context.Context, comment entity.Comment) (entity.Comment, error) {
 	script := "INSERT INTO comments(email, comment) VALUES (?, ?)"
 	result, err := repository.DB.ExecContext(ctx, script, comment.Email, comment.Comment)
 	if err != nil {
@@ -30,7 +30,7 @@ func (repository *commentRepositoryImpl) Insert(ctx context.Context, comment ent
 	return comment, nil
 }
 
-func (repository *commentRepositoryImpl) FindById(ctx context.Context, id int32) (entity.Comment, error) {
+func (repository *CommentRepositoryImpl) FindById(ctx context.Context, id int32) (entity.Comment, error) {
 	script := "SELECT Id, email, comment FROM comments WHERE id = ? LIMIT 1"
 	rows, err := repository.DB.QueryContext(ctx, script, id)
 	comment := entity.Comment{}
@@ -49,7 +49,7 @@ func (repository *commentRepositoryImpl) FindById(ctx context.Context, id int32)
 
 }
 
-func (repository *commentRepositoryImpl) FindAll(ctx context.Context) ([]entity.Comment, error) {
+func (repository *CommentRepositoryImpl) FindAll(ctx context.Context) ([]entity.Comment, error) {
 	script := "SELECT id, email, comment FROM comments"
 	rows, err := repository.DB.QueryContext(ctx, script)
 	if err != nil {
@@ -64,4 +64,36 @@ func (repository *commentRepositoryImpl) FindAll(ctx context.Context) ([]entity.
 
 	}
 	return comments, nil
+}
+
+func (repository *CommentRepositoryImpl) Update(ctx context.Context, comment entity.Comment) (entity.Comment, error) {
+	script := "UPDATE comments SET comment = ? WHERE  email = ?"
+	result, err := repository.DB.ExecContext(ctx, script, comment.Email, comment.Comment)
+	if err != nil {
+		return comment, err
+	}
+	rowCnt, err := result.RowsAffected()
+	if err != nil {
+		return comment, err
+	}
+	if rowCnt == 0 {
+		return comment, err
+	}
+	return comment, nil
+}
+
+func (repository *CommentRepositoryImpl) Delete(ctx context.Context, comment entity.Comment) (entity.Comment, error) {
+	script := "DELETE FROM comments WHERE email = ?"
+	result, err := repository.DB.ExecContext(ctx, script, comment.Email)
+	if err != nil {
+		return comment, err
+	}
+	rowCnt, err := result.RowsAffected()
+	if err != nil {
+		return comment, err
+	}
+	if rowCnt == 0 {
+		return comment, err
+	}
+	return comment, nil
 }

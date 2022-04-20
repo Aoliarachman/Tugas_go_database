@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestcommentInsert(t *testing.T) {
+func TestCommentInsert(t *testing.T) {
 	commentRepository := NewCommentRepository(belajar_db.GetConnection())
 
 	ctx := context.Background()
@@ -28,7 +28,7 @@ func TestcommentInsert(t *testing.T) {
 func TestFindById(t *testing.T) {
 	commentRepository := NewCommentRepository(belajar_db.GetConnection())
 
-	comment, err := commentRepository.FindById(context.Background(), 37)
+	comment, err := commentRepository.FindById(context.Background(), 6) //jumlah id yang tersedia
 	if err != nil {
 		panic(err)
 	}
@@ -46,4 +46,33 @@ func TestFindAll(t *testing.T) {
 	for _, comment := range comments {
 		fmt.Println(comment)
 	}
+}
+
+func TestUpdate(t *testing.T) {
+	commentRepository := NewCommentRepository(belajar_db.GetConnection())
+
+	ctx := context.Background()
+	comment := entity.Comment{
+		Email:   "repository@test.com",
+		Comment: "Comment Terbaruku",
+	}
+	result, err := commentRepository.Update(ctx, comment)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+}
+
+func TestDelete(t *testing.T) {
+	commentRepository := NewCommentRepository(belajar_db.GetConnection())
+
+	ctx := context.Background()
+	comment := entity.Comment{
+		Email: "repository@test.com",
+	}
+	result, err := commentRepository.Delete(ctx, comment)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
 }

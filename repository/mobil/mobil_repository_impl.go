@@ -12,7 +12,7 @@ type MobilRepositoryImpl struct {
 	DB *sql.DB
 }
 
-func NewMobilRepository(db *sql.DB) MobilRepository {
+func NewMobilRepository(db *sql.DB) *MobilRepositoryImpl {
 	return &MobilRepositoryImpl{db}
 }
 func (repository *MobilRepositoryImpl) Insert(ctx context.Context, mobil entity.Mobil) (entity.Mobil, error) {
@@ -62,47 +62,34 @@ func (repository *MobilRepositoryImpl) FindAll(ctx context.Context) ([]entity.Mo
 	return Mobile, nil
 }
 
-func (repository *MobilRepositoryImpl) Update(ctx context.Context, id int32, Mobil entity.Mobil) (entity.Mobil, error) {
-	//TODO implement me
-	script := "SELECT id, Harga, Merk FROM Mobil WHERE id = ? LIMIT 1"
-	rows, err := repository.DB.QueryContext(ctx, script, id)
-	defer rows.Close()
-
+func (repository *MobilRepositoryImpl) Update(ctx context.Context, mobil entity.Mobil) (entity.Mobil, error) {
+	script := "UPDATE Mobil SET Harga = ? WHERE  Merk = ?"
+	result, err := repository.DB.ExecContext(ctx, script, mobil.Harga, mobil.Merk)
 	if err != nil {
-		return Mobil, err
+		return mobil, err
 	}
-	if rows.Next() {
-		// yes
-		script := "UPDATE Mobil SET Harga = ?, Merk = ? WHERE id = ?"
-		_, err := repository.DB.ExecContext(ctx, script, Mobil.Harga, Mobil.Merk, id)
-		if err != nil {
-			return Mobil, err
-		}
-		Mobil.Id = id
-		return Mobil, nil
-	} else {
-		// no
-		return Mobil, errors.New(("Id " + strconv.Itoa(int(id)) + " Not Found"))
+	rowCnt, err := result.RowsAffected()
+	if err != nil {
+		return mobil, err
 	}
+	if rowCnt == 0 {
+		return mobil, err
+	}
+	return mobil, nil
 }
 
-func (repository *MobilRepositoryImpl) Delete(ctx context.Context, id int32) (string, error) {
-	script := "SELECT id, Harga, Merk FROM Mobil WHERE id = ? LIMIT 1"
-	rows, err := repository.DB.QueryContext(ctx, script, id)
-	defer rows.Close()
+func (repository *MobilRepositoryImpl) Delete(ctx context.Context, mobil entity.Mobil) (entity.Mobil, error) {
+	script := "DELETE FROM mobil WHERE Merk = ?"
+	result, err := repository.DB.ExecContext(ctx, script, mobil.Merk)
 	if err != nil {
-		return "Gagal", err
+		return mobil, err
 	}
-	if rows.Next() {
-
-		script := "DELETE FROM Mobil WHERE id = ?"
-		_, err := repository.DB.ExecContext(ctx, script, id)
-		if err != nil {
-			return "Id" + strconv.Itoa(int(id)) + "Gagal", err
-		}
-		return "Id" + strconv.Itoa(int(id)) + "Sukses", nil
-	} else {
-
-		return "Gagal", errors.New(("Id" + strconv.Itoa(int(id)) + "tidak ada"))
+	rowCnt, err := result.RowsAffected()
+	if err != nil {
+		return mobil, err
 	}
+	if rowCnt == 0 {
+		return mobil, err
+	}
+	return mobil, nil
 }
