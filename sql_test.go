@@ -2,11 +2,9 @@ package belajar_db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strconv"
 	"testing"
-	"time"
 )
 
 func TestExecSql(t *testing.T) {
@@ -15,7 +13,7 @@ func TestExecSql(t *testing.T) {
 
 	ctx := context.Background()
 
-	script := "INSERT INTO comment(email,comment) VALUES('?','?')"
+	script := "INSERT INTO comments(email,comment) VALUES('?','?')"
 	_, err := db.ExecContext(ctx, script)
 	if err != nil {
 		panic(err)
@@ -30,7 +28,7 @@ func TestQuerySql(t *testing.T) {
 
 	ctx := context.Background()
 
-	script := "SELECT email, comments FROM comment"
+	script := "SELECT email, comment FROM comments"
 	rows, err := db.QueryContext(ctx, script)
 	if err != nil {
 		panic(err)
@@ -54,41 +52,26 @@ func TestQuerySqlComplex(t *testing.T) {
 
 	ctx := context.Background()
 
-	script := "SELECT id, name, email, balance, rating, birth_date, married, created_at FROM customer"
+	script := "SELECT id, email, comment" +
+		" created_at FROM comments"
 	rows, err := db.QueryContext(ctx, script)
 	if err != nil {
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var id, name string
-		var email sql.NullString
-		var balance int32
-		var rating float64
-		var birthDate sql.NullTime
-		var createdAt time.Time
-		var married bool
+		var id string
+		var email string
+		var comment string
 
-		err = rows.Scan(&id, &name, &email, &balance, &rating, &birthDate, &married, &createdAt)
+		err = rows.Scan(&id, &email, &comment)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("==============")
 		fmt.Println("Id", id)
-		fmt.Println("Name", name)
-		if email.Valid {
-			fmt.Println("Email", email.String)
-		}
-
-		fmt.Println("Balance", balance)
-		fmt.Println("Rating", rating)
-		if birthDate.Valid {
-			fmt.Println("Birth Date:", birthDate.Time)
-		}
-		fmt.Println("Married", married)
-		fmt.Println("Created At", createdAt)
+		fmt.Println("Email", email)
+		fmt.Println("comment", comment)
 	}
-
 }
 
 func TestSqlInjection(t *testing.T) {
@@ -97,11 +80,11 @@ func TestSqlInjection(t *testing.T) {
 
 	ctx := context.Background()
 
-	username := "admin'; #"
-	password := "salah"
+	email := "admin@gmail.com'; #"
+	comment := "salah"
 
-	script := "SELECT username FROM user WHERE username = '" + username +
-		"' AND password = '" + password + "'LIMIT 1"
+	script := "SELECT email FROM comments WHERE email = '" + email +
+		"' AND comment = '" + comment + "'LIMIT 1"
 
 	fmt.Println(script)
 	rows, err := db.QueryContext(ctx, script)
@@ -111,12 +94,12 @@ func TestSqlInjection(t *testing.T) {
 	defer rows.Close()
 
 	if rows.Next() {
-		var username string
-		err := rows.Scan(&username)
+		var email string
+		err := rows.Scan(&email)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Sukses Login", username)
+		fmt.Println("Sukses Login", email)
 	} else {
 		fmt.Println("Gagal Login")
 	}
@@ -128,12 +111,12 @@ func TestSqlInjectionSafe(t *testing.T) {
 
 	ctx := context.Background()
 
-	username := "admin'; #"
-	password := "salah"
+	email := "admin'; #"
+	comment := "salah"
 
-	script := "SELECT username FROM user WHERE username = ? AND password = ? LIMIT 1"
+	script := "SELECT email FROM comments WHERE email = ? AND comment = ? LIMIT 1"
 	fmt.Println(script)
-	rows, err := db.QueryContext(ctx, script, username, password)
+	rows, err := db.QueryContext(ctx, script, email, comment)
 	if err != nil {
 		panic(err)
 	}
@@ -141,12 +124,12 @@ func TestSqlInjectionSafe(t *testing.T) {
 	defer rows.Close()
 
 	if rows.Next() {
-		var username string
-		err := rows.Scan(&username)
+		var email string
+		err := rows.Scan(&email)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Sukses Login", username)
+		fmt.Println("Sukses Login", email)
 	} else {
 		fmt.Println("Gagal Login")
 	}
@@ -158,11 +141,11 @@ func TestExecSqlParameter(t *testing.T) {
 
 	ctx := context.Background()
 
-	username := "Eko'; DROP TABLE user; #"
-	password := "Eko"
+	email := "Eko'; DROP TABLE user; #"
+	comment := "Eko"
 
-	script := "INSERT INTO user(username, password) VALUES(?,?)"
-	_, err := db.ExecContext(ctx, script, username, password)
+	script := "INSERT INTO comments(email, comment) VALUES(?,?)"
+	_, err := db.ExecContext(ctx, script, email, comment)
 	if err != nil {
 		panic(err)
 	}
@@ -195,7 +178,7 @@ func TestPrepareStatment(t *testing.T) {
 	defer db.Close()
 
 	ctx := context.Background()
-	script := "INSERT INTO comments(email,content) VALUES(?,?)"
+	script := "INSERT INTO comments(email,comment) VALUES(?,?)"
 	statement, err := db.PrepareContext(ctx, script)
 	if err != nil {
 		panic(err)
